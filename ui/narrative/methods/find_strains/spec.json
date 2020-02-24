@@ -36,8 +36,8 @@
     "behavior": {
         "service-mapping": {
             "url": "",
-            "name": "kb_meta_decoder",
-            "method": "map_reads_to_reference",
+            "name": "kb_meta_decoder_py2",
+            "method": "find_strains",
             "input_mapping": [
                 {
                     "narrative_system_variable": "workspace",

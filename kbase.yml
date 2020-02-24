@@ -1,8 +1,8 @@
 module-name:
-    kb_meta_decoder
+    kb_meta_decoder_py2
 
 module-description:
-    KBase wrapper for meta_decoder
+    KBase wrapper for meta_decoder, python 2 branch
 
 service-language:
     python

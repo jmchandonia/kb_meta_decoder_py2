@@ -15,13 +15,13 @@ from installed_clients.KBaseReportClient import KBaseReport
 #END_HEADER
 
 
-class kb_meta_decoder:
+class kb_meta_decoder_py2:
     '''
     Module Name:
-    kb_meta_decoder
+    kb_meta_decoder_py2
 
     Module Description:
-    A KBase module: kb_meta_decoder
+    A KBase module: kb_meta_decoder_py2
     '''
 
     ######## WARNING FOR GEVENT USERS ####### noqa
@@ -31,8 +31,8 @@ class kb_meta_decoder:
     # the latter method is running.
     ######################################### noqa
     VERSION = "0.0.1"
-    GIT_URL = "git@github.com:kbaseapps/kb_meta_decoder.git"
-    GIT_COMMIT_HASH = "b5ac2935324fdbde2415cc82099f915df158be24"
+    GIT_URL = "git@github.com:jmchandonia/kb_meta_decoder_py2.git"
+    GIT_COMMIT_HASH = "3674b728f607e44f3fc4f844867da41a41795fb5"
 
     #BEGIN_CLASS_HEADER
     SERVICE_VER = 'release'
@@ -231,7 +231,7 @@ class kb_meta_decoder:
             os.makedirs(output_dir)
 
         try:
-            cmdstring = "cd /meta_decoder && ln -s /usr/bin/python3 bin/python && mkdir input_dir && cd input_dir && ln -s "+reads_file_path+" . && ln -s "+contigs_file_path+" . && cd .. && ln -s "+output_dir+" output_dir"
+            cmdstring = "cd /meta_decoder && ln -s /usr/bin/python2 bin/python && mkdir input_dir && cd input_dir && ln -s "+reads_file_path+" . && ln -s "+contigs_file_path+" . && cd .. && ln -s "+output_dir+" output_dir"
             cmdProcess = subprocess.Popen(cmdstring, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             for line in cmdProcess.stdout:
                 print(line.decode("utf-8").rstrip())
@@ -305,10 +305,10 @@ class kb_meta_decoder:
         pass
 
 
-    def map_reads_to_reference(self, ctx, params):
+    def find_strains(self, ctx, params):
         """
-        Map reads to a reference assembly.  Should save BAM-like object.
-        :param params: instance of type "MapReadsParams" -> structure:
+        Finds Strains
+        :param params: instance of type "StrainFinderParams" -> structure:
            parameter "workspace_name" of String, parameter "workspace_id" of
            String, parameter "assembly_ref" of String, parameter "reads_ref"
            of String
@@ -317,216 +317,7 @@ class kb_meta_decoder:
         """
         # ctx is the context object
         # return variables are: output
-        #BEGIN map_reads_to_reference
-        console = []
-        self.log(console, 'Running map_reads_to_reference with parameters: ')
-        self.log(console, "\n"+pformat(params))
-
-        token = ctx['token']
-        env = os.environ.copy()
-        env['KB_AUTH_TOKEN'] = token
-
-        # param checks
-        required_params = ['workspace_name',
-                           'workspace_id',
-                           'assembly_ref',
-                           'reads_ref'
-                          ]
-        for required_param in required_params:
-            if required_param not in params or params[required_param] == None:
-                raise ValueError ("Must define required param: '"+required_param+"'")
-            
-        # load provenance
-        provenance = [{}]
-        if 'provenance' in ctx:
-            provenance = ctx['provenance']
-        provenance[0]['input_ws_objects']=[str(params['assembly_ref']),str(params['reads_ref'])]
-
-        # get the contigs from the genome as FASTA
-        contigs_file_path = self.download_assembly(token, params['assembly_ref'])
-
-        # get the reads as FASTQ
-        reads_file_path = self.download_reads(token, params['reads_ref'])
-
-        # run samtools
-        print("got contigs as "+contigs_file_path)
-        print("got reads as "+reads_file_path)
-        bam_file_path = self.map_reads(console, contigs_file_path, reads_file_path)
-        print("got bam output "+bam_file_path)
-
-        output_files = []
-        try:
-            dfuClient = DFUClient(self.callback_url, token=token, service_ver=self.SERVICE_VER)
-        except Exception as e:
-            raise ValueError('Unable to instantiate dfuClient with callback_url: '+ self.callback_url +' ERROR: ' + str(e))
-        dfu_output = dfuClient.file_to_shock({'file_path': bam_file_path,
-                                              'make_handle': 0})
-        output_files.append({'shock_id': dfu_output['shock_id'],
-                             'name': os.path.basename(bam_file_path),
-                             'label': 'BAM file',
-                             'description': 'BAM file'})
-
-        # get bam stats
-        self.get_bam_stats(console,bam_file_path)
-
-        # build report
-        reportName = 'kb_map_reads_report_'+str(uuid.uuid4())
-
-        reportObj = {'objects_created': [],
-                     'message': "\n".join(console),
-                     'direct_html': None,
-                     'direct_html_link_index': None,
-                     'file_links': output_files,
-                     'html_links': [],
-                     'workspace_name': params['workspace_name'],
-                     'report_object_name': reportName
-                     }
-
-        # save report object
-        try:
-            report = KBaseReport(self.callback_url, token=ctx['token'], service_ver=self.SERVICE_VER)
-            report_info = report.create_extended_report(reportObj)
-        except:
-            raise ValueError ("no report generated")
-
-        output = { 'report_name': report_info['name'], 'report_ref': report_info['ref'] }
-
-        #END map_reads_to_reference
-
-        # At some point might do deeper type checking...
-        if not isinstance(output, dict):
-            raise ValueError('Method map_reads_to_reference return value ' +
-                             'output is not type dict as required.')
-        # return the results
-        return [output]
-
-    def call_variants(self, ctx, params):
-        """
-        Call variants in a reference assembly.  Should be based on mapped reads (BAM file), and save VCF-like object.
-        :param params: instance of type "CallVariantsParams" -> structure:
-           parameter "workspace_name" of String, parameter "workspace_id" of
-           String, parameter "assembly_ref" of String, parameter "reads_ref"
-           of String
-        :returns: instance of type "ReportResults" -> structure: parameter
-           "report_name" of String, parameter "report_ref" of String
-        """
-        # ctx is the context object
-        # return variables are: output
-        #BEGIN call_variants
-        console = []
-        self.log(console, 'Running call_variants with parameters: ')
-        self.log(console, "\n"+pformat(params))
-
-        token = ctx['token']
-        env = os.environ.copy()
-        env['KB_AUTH_TOKEN'] = token
-
-        # param checks
-        required_params = ['workspace_name',
-                           'workspace_id',
-                           'assembly_ref',
-                           'reads_ref'
-                          ]
-        for required_param in required_params:
-            if required_param not in params or params[required_param] == None:
-                raise ValueError ("Must define required param: '"+required_param+"'")
-            
-        # load provenance
-        provenance = [{}]
-        if 'provenance' in ctx:
-            provenance = ctx['provenance']
-        provenance[0]['input_ws_objects']=[str(params['assembly_ref']),str(params['reads_ref'])]
-
-        # get the contigs from the genome as FASTA
-        contigs_file_path = self.download_assembly(token, params['assembly_ref'])
-
-        # get the reads as FASTQ
-        reads_file_path = self.download_reads(token, params['reads_ref'])
-
-        # run samtools
-        print("got contigs as "+contigs_file_path)
-        print("got reads as "+reads_file_path)
-        bam_file_path = self.map_reads(console, contigs_file_path, reads_file_path)
-        print("got bam output "+bam_file_path)
-
-        # sort bam
-        sorted_bam_file_path = self.sort_bam(console, bam_file_path)
-        print("got sorted bam output "+sorted_bam_file_path)
-
-        # index sorted bam
-        self.index_bam(console,sorted_bam_file_path)
-        print("indexed bam")
-
-        # call variants using bcftools
-        vcf_file_path = self.call_variants_bcftools(console, contigs_file_path, sorted_bam_file_path)
-        print("got vcf output "+vcf_file_path)
-
-        # save bam and vcf files for report
-        output_files = []
-        try:
-            dfuClient = DFUClient(self.callback_url, token=token, service_ver=self.SERVICE_VER)
-        except Exception as e:
-            raise ValueError('Unable to instantiate dfuClient with callback_url: '+ self.callback_url +' ERROR: ' + str(e))
-        dfu_output = dfuClient.file_to_shock({'file_path': sorted_bam_file_path,
-                                              'make_handle': 0})
-        output_files.append({'shock_id': dfu_output['shock_id'],
-                             'name': os.path.basename(sorted_bam_file_path),
-                             'label': 'BAM file (sorted)',
-                             'description': 'BAM file (sorted)'})
-        dfu_output = dfuClient.file_to_shock({'file_path': vcf_file_path,
-                                              'make_handle': 0})
-        output_files.append({'shock_id': dfu_output['shock_id'],
-                             'name': os.path.basename(vcf_file_path),
-                             'label': 'VCF file',
-                             'description': 'VCF file'})
-
-        # get vcf stats
-        self.get_vcf_stats(console,vcf_file_path)
-
-        # build report
-        reportName = 'kb_call_variants_report_'+str(uuid.uuid4())
-
-        reportObj = {'objects_created': [],
-                     'message': "\n".join(console),
-                     'direct_html': None,
-                     'direct_html_link_index': None,
-                     'file_links': output_files,
-                     'html_links': [],
-                     'workspace_name': params['workspace_name'],
-                     'report_object_name': reportName
-                     }
-
-        # save report object
-        try:
-            report = KBaseReport(self.callback_url, token=ctx['token'], service_ver=self.SERVICE_VER)
-            report_info = report.create_extended_report(reportObj)
-        except:
-            raise ValueError ("no report generated")
-
-        output = { 'report_name': report_info['name'], 'report_ref': report_info['ref'] }
-
-        #END call_variants
-
-        # At some point might do deeper type checking...
-        if not isinstance(output, dict):
-            raise ValueError('Method call_variants return value ' +
-                             'output is not type dict as required.')
-        # return the results
-        return [output]
-
-    def calculate_population_statistics(self, ctx, params):
-        """
-        Calculates population statistics
-        :param params: instance of type "CalcPopStatsParams" -> structure:
-           parameter "workspace_name" of String, parameter "workspace_id" of
-           String, parameter "assembly_ref" of String, parameter "reads_ref"
-           of String
-        :returns: instance of type "ReportResults" -> structure: parameter
-           "report_name" of String, parameter "report_ref" of String
-        """
-        # ctx is the context object
-        # return variables are: output
-        #BEGIN calculate_population_statistics
+        #BEGIN find_strains
         console = []
         self.log(console, 'Running call_variants with parameters: ')
         self.log(console, "\n"+pformat(params))
@@ -644,7 +435,7 @@ class kb_meta_decoder:
             if os.path.isfile(html_file_path):
                 print("Indexing "+html_file_path+"\n")
                 try:
-                    new_buf = ['<body><a href="kb_meta_decoder_report_index.html">Back to index</a><p>']
+                    new_buf = ['<body><a href="kb_meta_decoder_py2_report_index.html">Back to index</a><p>']
                     with open (html_file_path, 'r') as html_handle:
                         for line in html_handle.readlines():
                             new_buf.append(line.lstrip())
@@ -656,7 +447,7 @@ class kb_meta_decoder:
                     print("failed to index "+html_file_path+"\n")
 
         html_message+="</ul>\n"
-        html_file_path = os.path.join(output_dir, 'kb_meta_decoder_report_index.html')
+        html_file_path = os.path.join(output_dir, 'kb_meta_decoder_py2_report_index.html')
         with open(html_file_path, 'w') as html_handle:
             html_handle.write(html_message)
         try:
@@ -664,13 +455,13 @@ class kb_meta_decoder:
                                                   'pack': 'zip',
                                                   'make_handle': 0})
             output_html.append({'shock_id': dfu_output['shock_id'],
-                                'name': 'kb_meta_decoder_report_index.html',
+                                'name': 'kb_meta_decoder_py2_report_index.html',
                                 'label': 'All meta_decoder reports'})
         except:
             raise ValueError('Logging exception loading html_report to shock')
 
         # build report
-        reportName = 'kb_calc_pop_stats_report_'+str(uuid.uuid4())
+        reportName = 'kb_find_strains_report_'+str(uuid.uuid4())
 
         reportObj = {'objects_created': [],
                      'direct_html': None,
@@ -690,11 +481,11 @@ class kb_meta_decoder:
 
         output = { 'report_name': report_info['name'], 'report_ref': report_info['ref'] }
 
-        #END calculate_population_statistics
+        #END find_strains
 
         # At some point might do deeper type checking...
         if not isinstance(output, dict):
-            raise ValueError('Method calculate_population_statistics return value ' +
+            raise ValueError('Method find_strains return value ' +
                              'output is not type dict as required.')
         # return the results
         return [output]

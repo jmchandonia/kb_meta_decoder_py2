@@ -17,7 +17,7 @@ from jsonrpcbase import JSONRPCService, InvalidParamsError, KeywordError, \
 from jsonrpcbase import ServerError as JSONServerError
 
 from biokbase import log
-from kb_meta_decoder.authclient import KBaseAuth as _KBaseAuth
+from kb_meta_decoder_py2.authclient import KBaseAuth as _KBaseAuth
 
 try:
     from ConfigParser import ConfigParser
@@ -45,14 +45,14 @@ def get_config():
     retconfig = {}
     config = ConfigParser()
     config.read(get_config_file())
-    for nameval in config.items(get_service_name() or 'kb_meta_decoder'):
+    for nameval in config.items(get_service_name() or 'kb_meta_decoder_py2'):
         retconfig[nameval[0]] = nameval[1]
     return retconfig
 
 config = get_config()
 
-from kb_meta_decoder.kb_meta_decoderImpl import kb_meta_decoder  # noqa @IgnorePep8
-impl_kb_meta_decoder = kb_meta_decoder(config)
+from kb_meta_decoder_py2.kb_meta_decoder_py2Impl import kb_meta_decoder_py2  # noqa @IgnorePep8
+impl_kb_meta_decoder_py2 = kb_meta_decoder_py2(config)
 
 
 class JSONObjectEncoder(json.JSONEncoder):
@@ -327,7 +327,7 @@ class Application(object):
                                    context['method'], context['call_id'])
 
     def __init__(self):
-        submod = get_service_name() or 'kb_meta_decoder'
+        submod = get_service_name() or 'kb_meta_decoder_py2'
         self.userlog = log.log(
             submod, ip_address=True, authuser=True, module=True, method=True,
             call_id=True, changecallback=self.logcallback,
@@ -338,20 +338,12 @@ class Application(object):
         self.serverlog.set_log_level(6)
         self.rpc_service = JSONRPCServiceCustom()
         self.method_authentication = dict()
-        self.rpc_service.add(impl_kb_meta_decoder.map_reads_to_reference,
-                             name='kb_meta_decoder.map_reads_to_reference',
+        self.rpc_service.add(impl_kb_meta_decoder_py2.find_strains,
+                             name='kb_meta_decoder_py2.find_strains',
                              types=[dict])
-        self.method_authentication['kb_meta_decoder.map_reads_to_reference'] = 'required'  # noqa
-        self.rpc_service.add(impl_kb_meta_decoder.call_variants,
-                             name='kb_meta_decoder.call_variants',
-                             types=[dict])
-        self.method_authentication['kb_meta_decoder.call_variants'] = 'required'  # noqa
-        self.rpc_service.add(impl_kb_meta_decoder.calculate_population_statistics,
-                             name='kb_meta_decoder.calculate_population_statistics',
-                             types=[dict])
-        self.method_authentication['kb_meta_decoder.calculate_population_statistics'] = 'required'  # noqa
-        self.rpc_service.add(impl_kb_meta_decoder.status,
-                             name='kb_meta_decoder.status',
+        self.method_authentication['kb_meta_decoder_py2.find_strains'] = 'required'  # noqa
+        self.rpc_service.add(impl_kb_meta_decoder_py2.status,
+                             name='kb_meta_decoder_py2.status',
                              types=[dict])
         authurl = config.get(AUTH) if config else None
         self.auth_client = _KBaseAuth(authurl)
@@ -406,7 +398,7 @@ class Application(object):
                             err = JSONServerError()
                             err.data = (
                                 'Authentication required for ' +
-                                'kb_meta_decoder ' +
+                                'kb_meta_decoder_py2 ' +
                                 'but no authentication header was passed')
                             raise err
                         elif token is None and auth_req == 'optional':

@@ -1,10 +1,10 @@
 #
 # define display information
 #
-name: Call Variants
+name: Find strains, using meta_decoder
 
 tooltip: |
-    Call variants relative to a reference sequence, with SAMtools mpileup
+    Find strains, using meta_decoder
 
 screenshots: []
 
@@ -37,7 +37,7 @@ parameters :
             These reads will be mapped and then used to call variants.
 
 description : |
-    <p>This method uses BCFtools to call variants in a reference assembly.  It will first map short reads to this assembly.
+    <p>This method uses meta_decoder to call StrainFinder to find strains.
 
     <p><strong>Team members who deployed this App in KBase</strong>: John-Marc Chandonia. For questions, please <a href="http://kbase.us/contact-us/">contact us</a>.</p>
 

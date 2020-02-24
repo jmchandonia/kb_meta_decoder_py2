@@ -1,7 +1,7 @@
-SERVICE = kb_meta_decoder
-SERVICE_CAPS = kb_meta_decoder
-SPEC_FILE = kb_meta_decoder.spec
-URL = https://kbase.us/services/kb_meta_decoder
+SERVICE = kb_meta_decoder_py2
+SERVICE_CAPS = kb_meta_decoder_py2
+SPEC_FILE = kb_meta_decoder_py2.spec
+URL = https://kbase.us/services/kb_meta_decoder_py2
 DIR = $(shell pwd)
 LIB_DIR = lib
 SCRIPTS_DIR = scripts

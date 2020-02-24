@@ -4,14 +4,14 @@ import time
 import unittest
 from configparser import ConfigParser
 
-from kb_meta_decoder.kb_meta_decoderImpl import kb_meta_decoder
-from kb_meta_decoder.kb_meta_decoderServer import MethodContext
-from kb_meta_decoder.authclient import KBaseAuth as _KBaseAuth
+from kb_meta_decoder_py2.kb_meta_decoder_py2Impl import kb_meta_decoder_py2
+from kb_meta_decoder_py2.kb_meta_decoder_py2Server import MethodContext
+from kb_meta_decoder_py2.authclient import KBaseAuth as _KBaseAuth
 
 from installed_clients.WorkspaceClient import Workspace
 
 
-class kb_meta_decoderTest(unittest.TestCase):
+class kb_meta_decoder_py2Test(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -20,7 +20,7 @@ class kb_meta_decoderTest(unittest.TestCase):
         cls.cfg = {}
         config = ConfigParser()
         config.read(config_file)
-        for nameval in config.items('kb_meta_decoder'):
+        for nameval in config.items('kb_meta_decoder_py2'):
             cls.cfg[nameval[0]] = nameval[1]
         # Getting username from Auth profile for token
         authServiceUrl = cls.cfg['auth-service-url']
@@ -32,14 +32,14 @@ class kb_meta_decoderTest(unittest.TestCase):
         cls.ctx.update({'token': token,
                         'user_id': user_id,
                         'provenance': [
-                            {'service': 'kb_meta_decoder',
+                            {'service': 'kb_meta_decoder_py2',
                              'method': 'please_never_use_it_in_production',
                              'method_params': []
                              }],
                         'authenticated': 1})
         cls.wsURL = cls.cfg['workspace-url']
         cls.wsClient = Workspace(cls.wsURL)
-        cls.serviceImpl = kb_meta_decoder(cls.cfg)
+        cls.serviceImpl = kb_meta_decoder_py2(cls.cfg)
         cls.scratch = cls.cfg['scratch']
         cls.callback_url = os.environ['SDK_CALLBACK_URL']
         suffix = int(time.time() * 1000)
@@ -53,7 +53,7 @@ class kb_meta_decoderTest(unittest.TestCase):
             print('Test workspace was deleted')
 
     # NOTE: According to Python unittest naming rules test method names should start from 'test'. # noqa
-    def test_call_variants(self):
+    def test_find_strains(self):
         # Prepare test objects in workspace if needed using
         # self.getWsClient().save_objects({'workspace': self.getWsName(),
         #                                  'objects': []})
@@ -69,7 +69,7 @@ class kb_meta_decoderTest(unittest.TestCase):
         test_ws_id = "35222"
         test_assembly = "35222/2/1"
         test_reads = "35222/3/1"
-        ret = self.serviceImpl.calculate_population_statistics(self.ctx, {'workspace_name': test_ws_name,
-                                                                          'workspace_id': test_ws_id,
-                                                                          'assembly_ref' : test_assembly,
-                                                                          'reads_ref' : test_reads})
+        ret = self.serviceImpl.find_strains(self.ctx, {'workspace_name': test_ws_name,
+                                                       'workspace_id': test_ws_id,
+                                                       'assembly_ref' : test_assembly,
+                                                       'reads_ref' : test_reads})

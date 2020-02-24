@@ -1,4 +1,4 @@
-# kb_meta_decoder release notes
+# kb_meta_decoder_py2 release notes
 =========================================
 
 0.0.1
