@@ -19,8 +19,9 @@ RUN pip2 install scipy
 RUN pip2 install FuncDesigner
 RUN pip2 install DerApproximator
 RUN pip2 install openopt
+RUN pip2 install Cython
 RUN git clone https://github.com/lh3/bwa.git && cd bwa && make && cp bwa /usr/local/bin/
-RUN git clone -b py3 https://github.com/caozhichongchong/meta_decoder.git
+RUN git clone -b py3 https://github.com/caozhichongchong/meta_decoder.git && cd meta_decoder && git clone https://bitbucket.org/yonatanf/strainfinder && cp strainfinder/*.py .
 
 # -----------------------------------------
 
