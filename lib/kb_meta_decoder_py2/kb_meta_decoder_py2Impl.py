@@ -250,7 +250,7 @@ class kb_meta_decoder_py2:
     def run_meta_decoder(self, console):
         try:
             self.log(console,"Running meta_decoder.\n");
-            cmdstring = "cd /meta_decoder && ./bin/python meta_decoder.py -i input_dir -inf .fastq --r input_dir --rf .fa --s 1 --o output_dir --t 1 --bwa /bwa/bwa && sh 0.sh"
+            cmdstring = "cd /meta_decoder && ./bin/python meta_decoder.py -i input_dir -inf .fastq --r input_dir --rf .fa --s 1 --o output_dir --t 1 --bwa /bwa/bwa && sh sub_metadecoder/0.sh"
 
             cmdProcess = subprocess.Popen(cmdstring, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             for line in cmdProcess.stdout:
@@ -270,7 +270,7 @@ class kb_meta_decoder_py2:
     def make_html(self, console):
         try:
             self.log(console,"Making HTML.\n");
-            cmdstring = "cd /meta_decoder && ./bin/python meta_decoder.py --o output_dir --html T"
+            cmdstring = "cd /meta_decoder && ./bin/python meta_decoder.py --o output_dir --html T && sh meta.decoder.visual.sh"
 
             cmdProcess = subprocess.Popen(cmdstring, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             for line in cmdProcess.stdout:
@@ -357,20 +357,6 @@ class kb_meta_decoder_py2:
         # make HTML
         self.make_html(console)
 
-        suffixes = {".sites.pi": "Nucleotide_diversity per site",
-                    ".windowed.pi": "Nucleotide_diversity per 1000bp",
-                    ".frq": "Allele frequency for each site",
-                    ".frq.count": "Raw allele counts for each site",
-                    ".TsTv": "Transition / Transversion ratio in bins of size 1000bp",
-                    ".TsTv.summary": "Simple summary of all Transitions and Transversions",
-                    ".TsTv.count": "Transition / Transversion ratio as a function of alternative allele count",
-                    ".het": "Measure of heterozygosity on a per-individual basis",
-                    ".hwe": "p-value for each site from a Hardy-Weinberg Equilibrium test",
-                    ".Tajima.D": "Tajima D statistic in bins with size of 1000bp",
-                    ".relatedness": "Relatedness statistic of unadjusted Ajk statistic<br>Expectation of Ajk is zero for individuals within a populations, and one for an individual with themselves",
-                    ".snpden": "Number and density of SNPs in bins of size of 1000bp",
-                    ".indel.hist": "Histogram file of the length of all indels (including SNPs)"}
-
         # need another dfu client
         try:
             dfuClient = DFUClient(self.callback_url, token=token, service_ver=self.SERVICE_VER)
@@ -378,6 +364,9 @@ class kb_meta_decoder_py2:
             raise ValueError('Unable to instantiate dfuClient with callback_url: '+ self.callback_url +' ERROR: ' + str(e))
 
         # remove BAM files, or output zip gets too big; save some.
+        suffixes = {".cov": "Coverage",
+                    ".avgcov": "Average Coverage"}
+
         output_files = []
 
         data_file_path = os.path.join(output_dir,os.path.basename(reads_file_path)+"_"+os.path.basename(contigs_file_path)+".bam")
@@ -414,9 +403,9 @@ class kb_meta_decoder_py2:
         # make index/explanation of HTML output files
         # and load output
         output_html = []
-        html_message = "<p><b>MetaDecoder output</b>:<ul>"
+        html_message = "<p><b>MetaDecoder StrainFinder output</b>:<ul>"
         for suffix, description in suffixes.items():
-            data_file_base = os.path.basename(reads_file_path)+"_"+os.path.basename(contigs_file_path)+".flt.vcf"+suffix
+            data_file_base = os.path.basename(reads_file_path)+"_"+os.path.basename(contigs_file_path)+".sorted.bam"+suffix
             data_file_path = os.path.join(output_dir,data_file_base)
             html_file_base = data_file_base+".html"
             html_file_path = os.path.join(output_dir,html_file_base)
