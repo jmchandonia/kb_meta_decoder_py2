@@ -369,8 +369,6 @@ class kb_meta_decoder_py2:
 
         output_files = []
 
-        data_file_path = os.path.join(output_dir,os.path.basename(reads_file_path)+"_"+os.path.basename(contigs_file_path)+".bam")
-        os.remove(data_file_path)
         data_file_path = os.path.join(output_dir,os.path.basename(reads_file_path)+"_"+os.path.basename(contigs_file_path)+".sorted.bam")
         dfu_output = dfuClient.file_to_shock({'file_path': data_file_path,
                                               'make_handle': 0})
